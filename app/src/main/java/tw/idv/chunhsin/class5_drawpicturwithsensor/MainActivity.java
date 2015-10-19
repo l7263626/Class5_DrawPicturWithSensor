@@ -1,5 +1,6 @@
 package tw.idv.chunhsin.class5_drawpicturwithsensor;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -32,26 +33,34 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        /*
         Sensor sensor=sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
         int delay=SensorManager.SENSOR_DELAY_UI;
         sensorManager.registerListener(sensorEventListener,sensor,delay);
+        */
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        sensorManager.unregisterListener(sensorEventListener);
+        //sensorManager.unregisterListener(sensorEventListener);
     }
 
     void findviews(){
         image=(ImageView)findViewById(R.id.imageView);
     }
-
+    boolean init=true;
+    float initDegree;
     SensorEventListener sensorEventListener=new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
             float[] values=sensorEvent.values;
-            showCompass(values);
+            //showCompass(values);
+            if(init){
+                initDegree = values[0];
+                init = false;
+            }
+            showPhoneState(values);
         }
 
         @Override
@@ -68,7 +77,45 @@ public class MainActivity extends AppCompatActivity {
 
     }
     public void onDrawSurfaceView(View v){
+        Intent intent = new Intent(MainActivity.this,SurfaceViewActivity.class);
+        startActivity(intent);
+    }
 
+    void showPhoneState(float[] values){
+        Bitmap bmpPlate= BitmapFactory.decodeResource(getResources(), R.drawable.androidplate);
+        Bitmap bmpWidth= BitmapFactory.decodeResource(getResources(), R.drawable.androidwidth);
+        Bitmap bmpHeight= BitmapFactory.decodeResource(getResources(), R.drawable.androidheight);
+        int bmp_w=image.getWidth();
+        int bmp_h=image.getHeight();
+        Bitmap bmp=Bitmap.createBitmap(bmp_w,bmp_h, Bitmap.Config.ARGB_8888);
+
+        Paint paint=new Paint();
+        paint.setAntiAlias(true);
+
+        Canvas canvas=new Canvas(bmp);
+        canvas.drawColor(Color.WHITE);
+        canvas.drawBitmap(bmpPlate, bmp_w / 2 - bmpPlate.getWidth() / 2, bmp_h / 4 - bmpPlate.getHeight() / 2, paint);
+        canvas.drawBitmap(bmpHeight, bmp_w / 2 - bmpHeight.getWidth() / 2, bmp_h / 2 - bmpHeight.getHeight() / 2, paint);
+        canvas.drawBitmap(bmpWidth, bmp_w / 2 - bmpWidth.getWidth() / 2, (bmp_h / 4) * 3 - bmpWidth.getHeight() / 2, paint);
+        canvas.save();
+        canvas.drawColor(Color.WHITE);
+        canvas.rotate(values[0] - initDegree, bmp_w / 2, bmp_h / 4);
+        canvas.drawBitmap(bmpPlate, bmp_w / 2 - bmpPlate.getWidth() / 2, bmp_h / 4 - bmpPlate.getHeight() / 2, paint);
+        canvas.restore();
+        canvas.drawText(String.valueOf(values[0]-initDegree), 50, bmp_h / 4, paint);
+        canvas.save();
+        canvas.rotate(values[1], bmp_w / 2, bmp_h / 2);
+        canvas.drawBitmap(bmpHeight, bmp_w / 2 - bmpHeight.getWidth() / 2, bmp_h / 2 - bmpHeight.getHeight() / 2, paint);
+        canvas.restore();
+        canvas.drawText(String.valueOf(values[1]), 50, bmp_h / 2, paint);
+
+        canvas.save();
+        canvas.rotate(-values[2], bmp_w / 2, bmp_h / 4 * 3);
+        canvas.drawBitmap(bmpWidth, bmp_w / 2 - bmpWidth.getWidth() / 2, bmp_h / 4 * 3 - bmpWidth.getHeight() / 2, paint);
+        canvas.restore();
+        canvas.drawText(String.valueOf(values[2]), 50, bmp_h / 4*3, paint);
+
+        image.setImageBitmap(bmp);
     }
 
     void showCompass(float[] values){
@@ -82,10 +129,16 @@ public class MainActivity extends AppCompatActivity {
 
         Canvas canvas=new Canvas(bmp);
         canvas.drawColor(Color.WHITE);
+
         canvas.drawBitmap(bmpCompass, bmp_w / 2 - bmpCompass.getWidth() / 2, bmp_h / 2 - bmpCompass.getHeight() / 2, paint);
         canvas.save();
-        canvas.rotate(-values[0]-8,bmp_w/2,bmp_h/2);
-        canvas.drawBitmap(bmpCompass, bmp_w/2-bmpCompass.getWidth()/2, bmp_h/2-bmpCompass.getHeight()/2, paint);
+        canvas.drawColor(Color.WHITE);
+        canvas.rotate(values[0], bmp_w / 2, bmp_h / 4);
+        canvas.drawBitmap(bmpCompass, bmp_w / 2 - bmpCompass.getWidth() / 2, bmp_h / 2 - bmpCompass.getHeight() / 2, paint);
+        canvas.restore();
+        canvas.save();
+        canvas.rotate(values[0], bmp_w / 2, bmp_h / 4*3);
+
         canvas.restore();
         image.setImageBitmap(bmp);
 
