@@ -21,7 +21,7 @@ public class SurfaceViewActivity extends AppCompatActivity {
     SurfaceHolder holder;
     SensorManager sensorManager;
     int surfaceWidth,surfaceHeight;
-    Bitmap bmpCompass;
+    Bitmap bmpCompass,bmpPlate,bmpWidth,bmpHeight;
     Paint paint;
 
 
@@ -31,12 +31,29 @@ public class SurfaceViewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_surfaceview);
         sensorManager=(SensorManager)getSystemService(SENSOR_SERVICE);
         findviews();
+        //initBmp();
+        initBmp2();
+    }
+
+    void initPaint(){
+        paint = new Paint();
+        paint.setAntiAlias(true);
+    }
+
+    void initBmp(){
+        initPaint();
+        bmpCompass= BitmapFactory.decodeResource(getResources(), R.drawable.compass);
+
+    }
+
+    void initBmp2(){
+        initPaint();
+        bmpPlate= BitmapFactory.decodeResource(getResources(), R.drawable.androidplate);
+        bmpWidth= BitmapFactory.decodeResource(getResources(), R.drawable.androidwidth);
+        bmpHeight= BitmapFactory.decodeResource(getResources(), R.drawable.androidheight);
     }
 
     void findviews(){
-        bmpCompass= BitmapFactory.decodeResource(getResources(), R.drawable.compass);
-        paint = new Paint();
-        paint.setAntiAlias(true);
         surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
         holder = surfaceView.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
@@ -63,7 +80,7 @@ public class SurfaceViewActivity extends AppCompatActivity {
         super.onResume();
         Sensor sensor=sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
         int delay=SensorManager.SENSOR_DELAY_UI;
-        sensorManager.registerListener(sensorEventListener,sensor,delay);
+        sensorManager.registerListener(sensorEventListener, sensor, delay);
     }
 
     @Override
@@ -72,11 +89,19 @@ public class SurfaceViewActivity extends AppCompatActivity {
         sensorManager.unregisterListener(sensorEventListener);
     }
 
+    boolean isFirst=true;
+    float initDegree=0.0f;
+
     SensorEventListener sensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
             float[] values = sensorEvent.values;
-            showCompass(values);
+            if(isFirst){
+                initDegree = values[0];
+                isFirst=false;
+            }
+            showDegrees(values);
+            //showCompass(values);
         }
 
         @Override
@@ -101,6 +126,30 @@ public class SurfaceViewActivity extends AppCompatActivity {
 
 
 
+    }
+
+    void showDegrees(float[] values){
+        Canvas canvas = holder.lockCanvas();
+        canvas.drawColor(Color.WHITE);
+        canvas.save();
+        canvas.rotate(values[0] - initDegree, surfaceWidth / 2, surfaceHeight / 4);
+        canvas.drawBitmap(bmpPlate, surfaceWidth / 2 - bmpPlate.getWidth() / 2, surfaceHeight / 4 - bmpPlate.getHeight() / 2, paint);
+        canvas.restore();
+        StringBuilder sb = new StringBuilder();
+        sb.append("( ").append(values[0]).append(" - ").append(initDegree).append(" )");
+        canvas.drawText(sb.toString(), 30, surfaceHeight / 4 - 30, paint);
+        canvas.drawText(String.valueOf(values[0] - initDegree), 30, surfaceHeight / 4, paint);
+        canvas.save();
+        canvas.rotate(values[1], surfaceWidth / 2, surfaceHeight / 2);
+        canvas.drawBitmap(bmpHeight, surfaceWidth / 2 - bmpHeight.getWidth() / 2, surfaceHeight / 2 - bmpHeight.getHeight() / 2, paint);
+        canvas.restore();
+        canvas.drawText(String.valueOf(values[1]), 30, surfaceHeight / 2, paint);
+        canvas.save();
+        canvas.rotate(-values[2], surfaceWidth / 2, surfaceHeight / 4 * 3);
+        canvas.drawBitmap(bmpWidth, surfaceWidth / 2 - bmpWidth.getWidth() / 2, surfaceHeight / 4 * 3 - bmpWidth.getHeight() / 2, paint);
+        canvas.restore();
+        canvas.drawText(String.valueOf(values[2]), 30, surfaceHeight / 4 * 3, paint);
+        holder.unlockCanvasAndPost(canvas);
     }
 
     @Override
